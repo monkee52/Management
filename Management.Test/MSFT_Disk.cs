@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace AydenIO.Management.Test {
     [ManagementClassMap("ROOT\\Microsoft\\Windows\\Storage:MSFT_Disk")]
     public abstract class MSFT_Disk : MSFT_StorageObject {
-        public enum EBusType {
+        public enum EBusType : UInt16 {
             Unknown = 0,
             SCSI = 1,
             ATAPI = 2,
@@ -29,7 +29,7 @@ namespace AydenIO.Management.Test {
             NVMe = 17
         }
 
-        public enum EOfflineReason {
+        public enum EOfflineReason : UInt16 {
             Policy = 1,
             RedundantPath = 2,
             Snapshot = 3,
@@ -39,7 +39,7 @@ namespace AydenIO.Management.Test {
             DataIntegrityScanRequired = 7
         }
 
-        public enum EOperationalStatus {
+        public enum EOperationalStatus : UInt16 {
             Unknown = 0,
             Other = 1,
             OK = 2,
@@ -65,19 +65,19 @@ namespace AydenIO.Management.Test {
             Failed = 0xd014
         }
 
-        public enum EPartitionStyle {
+        public enum EPartitionStyle : UInt16 {
             Unknown = 0,
             MBR = 1,
             GPT = 2
         }
 
-        public enum EProvisioningType {
+        public enum EProvisioningType : UInt16 {
             Unknown = 0,
             Thin = 1,
             Fixed = 2
         }
 
-        public enum EHealthStatus {
+        public enum EHealthStatus : UInt16 {
             Healthy = 0,
             Warning = 1,
             Unhealthy = 2
@@ -101,27 +101,15 @@ namespace AydenIO.Management.Test {
         public abstract UInt32 PhysicalSectorSize { get; }
         public abstract UInt64 LargestFreeExtent { get; }
         public abstract UInt32 NumberOfPartitions { get; }
-
-        [ManagementProperty(CastAs = typeof(UInt16))]
         public abstract EProvisioningType ProvisioningType { get; }
-
-        [ManagementProperty(CastAs = typeof(UInt16))]
         public abstract EOperationalStatus OperationalStatus { get; }
-
-        [ManagementProperty(CastAs = typeof(UInt16))]
         public abstract EHealthStatus HealthStatus { get; }
-
-        [ManagementProperty(CastAs = typeof(UInt16))]
         public abstract EBusType BusType { get; }
-
-        [ManagementProperty(CastAs = typeof(UInt16))]
         public abstract EPartitionStyle PartitionStyle { get; }
 
         public abstract UInt32 Signature { get; }
         public abstract string Guid { get; }
         public abstract bool IsOffline { get; }
-
-        [ManagementProperty(CastAs = typeof(UInt16))]
         public abstract EOfflineReason OfflineReason { get; }
 
         public abstract bool IsReadOnly { get; }
@@ -178,7 +166,7 @@ namespace AydenIO.Management.Test {
             [ManagementProperty(Name = "IsActive")]
             bool isActive,
             [ManagementProperty(Name = "CreatedPartition")]
-            out string createdPartition
+            out MSFT_Partition createdPartition
         );
 
         [return: ManagementProperty(Name = "ExtendedStatus")]

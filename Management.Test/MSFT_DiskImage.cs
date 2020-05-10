@@ -34,8 +34,6 @@ namespace AydenIO.Management.Test {
         public abstract ulong LogicalSectorSize { get; }
         public abstract uint Number { get; }
         public abstract ulong Size { get; }
-
-        [ManagementProperty(CastAs = typeof(uint))]
         public abstract EStorageType StorageType { get; }
 
         public abstract void Mount(

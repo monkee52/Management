@@ -18,8 +18,12 @@ namespace AydenIO.Management.Test {
         [ManagementProperty(Name = "Partition")]
         protected abstract string PartitionObjectId { get; }
 
-        public MSFT_Disk Disk => ManagementSession.GetFactory<MSFT_Disk>().CreateInstance(new ManagementObject(this.ManagementObject.Scope, new ManagementPath(this.DiskObjectId), null));
+        public abstract MSFT_Disk Disk { get; }
 
-        public MSFT_Partition Partition => ManagementSession.GetFactory<MSFT_Partition>().CreateInstance(new ManagementObject(this.ManagementObject.Scope, new ManagementPath(this.PartitionObjectId), null));
+        public abstract MSFT_Partition Partition { get; }
+
+        //public MSFT_Disk Disk => ManagementSession.GetFactory<MSFT_Disk>().CreateInstance(new ManagementObject(this.ManagementObject.Scope, new ManagementPath(this.DiskObjectId), null));
+
+        //public MSFT_Partition Partition => ManagementSession.GetFactory<MSFT_Partition>().CreateInstance(new ManagementObject(this.ManagementObject.Scope, new ManagementPath(this.PartitionObjectId), null));
     }
 }

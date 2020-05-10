@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GetFactoryBinder.cs" />
     <Compile Include="ManagementClassBase.cs" />
     <Compile Include="ManagementClassFactory.cs" />
     <Compile Include="ManagementClassMapAttribute.cs" />
@@ -49,6 +50,7 @@
     <Compile Include="ManagementClassEnumerator.cs" />
     <Compile Include="ManagementPropertyAttribute.cs" />
     <Compile Include="ManagementSession.cs" />
+    <Compile Include="ManagementSessionDebugUtilities.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

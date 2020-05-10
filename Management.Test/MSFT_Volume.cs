@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace AydenIO.Management.Test {
     [ManagementClassMap("ROOT\\Microsoft\\Windows\\Storage:MSFT_Volume")]
     public abstract class MSFT_Volume : MSFT_StorageObject {
-        public enum EDedupMode {
+        public enum EDedupMode : UInt16 {
             Disabled = 0,
             GeneralPurpose = 1,
             HyperV = 2,
@@ -16,7 +16,7 @@ namespace AydenIO.Management.Test {
             NotAvailable = 4
         }
 
-        public enum EDriveType {
+        public enum EDriveType : UInt16 {
             Unknown = 0,
             InvalidRootPath = 1,
             Removable = 2,
@@ -26,7 +26,7 @@ namespace AydenIO.Management.Test {
             RAMDisk = 6
         }
 
-        public enum EHealthStatus {
+        public enum EHealthStatus : UInt16 {
             /// <summary>
             /// The volume is functioning normally.
             /// </summary>

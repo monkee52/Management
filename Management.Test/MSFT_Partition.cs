@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace AydenIO.Management.Test {
     [ManagementClassMap("ROOT\\Microsoft\\Windows\\Storage:MSFT_Partition")]
     public abstract class MSFT_Partition : MSFT_StorageObject {
-        public enum EMbrType {
+        public enum EMbrType : UInt16 {
             None = 0,
             FAT12 = 1,
             FAT16 = 4,
@@ -18,7 +18,7 @@ namespace AydenIO.Management.Test {
             FAT32 = 12
         }
 
-        public enum EOperationalStatus {
+        public enum EOperationalStatus : UInt16 {
             Unknown = 0,
             Online = 1,
             NoMedia = 3,
@@ -116,7 +116,6 @@ namespace AydenIO.Management.Test {
         /// the disk's PartitionStyle property is set to 1 - 'MBR' and will be NULL for all
         /// other partition styles.
         /// </summary>
-        [ManagementProperty(CastAs = typeof(ushort))]
         public abstract EMbrType MbrType { get; }
 
         /// <summary>
@@ -132,9 +131,7 @@ namespace AydenIO.Management.Test {
         /// bytes.
         /// </summary>
         public abstract ulong Offset { get; }
-
-        [ManagementProperty(CastAs = typeof(ushort))]
-        public abstract EOperationalStatus OperationStatus { get; }
+        public abstract EOperationalStatus OperationalStatus { get; }
 
         /// <summary>
         /// The operating system's number for the partition. Ordering is based on the partition's offset,

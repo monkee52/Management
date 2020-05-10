@@ -5,13 +5,13 @@ using System.Text;
 
 namespace AydenIO.Management {
     public class ManagementClassMapAttribute : Attribute {
-        private ManagementPath _path;
+        public ManagementPath Path { get; private set; }
 
         public ManagementClassMapAttribute(string path) {
-            this._path = new ManagementPath(path);
+            this.Path = new ManagementPath(path);
         }
 
-        public string NamespacePath => this._path.NamespacePath;
-        public string ClassName => this._path.ClassName;
+        public string NamespacePath => this.Path.NamespacePath;
+        public string ClassName => this.Path.ClassName;
     }
 }

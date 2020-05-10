@@ -9,20 +9,17 @@ using System.Threading.Tasks;
 namespace AydenIO.Management.Test {
     class Program {
         static void Main(string[] args) {
-            ManagementSession.GetFactory<MSFT_StorageObject>().GetInstances().OfType<MSFT_StorageObject>().ToArray();
-            ManagementSession.GetFactory<MSFT_StorageFaultDomain>().GetInstances().OfType<MSFT_StorageFaultDomain>().ToArray();
-            ManagementSession.GetFactory<MSFT_PhysicalDisk>().GetInstances().OfType<MSFT_PhysicalDisk>().ToArray();
-            ManagementSession.GetFactory<MSFT_Disk>().GetInstances().OfType<MSFT_Disk>().ToArray();
-            ManagementSession.GetFactory<MSFT_Volume>().GetInstances().OfType<MSFT_Volume>().ToArray();
-            ManagementSession.GetFactory<MSFT_Partition>().GetInstances().OfType<MSFT_Partition>().ToArray();
-            ManagementSession.GetFactory<MSFT_DiskImage>().GetInstances().OfType<MSFT_DiskImage>().ToArray();
-            ManagementSession.GetFactory<MSFT_DiskToPartition>().GetInstances().OfType<MSFT_DiskToPartition>().ToArray();
-
+            var w = ManagementSession.GetFactory<MSFT_Disk>().GetInstances();
             var x = ManagementSession.GetFactory<MSFT_DiskToPartition>().GetInstances().OfType<MSFT_DiskToPartition>().ToArray();
 
+            foreach (MSFT_Disk disk in w) {
+                Console.WriteLine(disk.FriendlyName);
+            }
+
+            ManagementSession.Save();
+
             foreach (MSFT_DiskToPartition d2p in x) {
-                Console.WriteLine(d2p.Disk.FriendlyName);
-                Console.WriteLine(String.Join(", ", d2p.Partition.AccessPaths ?? new string[] { }));
+                Console.WriteLine(d2p.Partition);
             }
 
             ManagementSession.Save();
