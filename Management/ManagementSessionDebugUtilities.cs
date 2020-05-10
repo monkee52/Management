@@ -5,13 +5,13 @@ using System.Runtime.CompilerServices;
 
 namespace AydenIO.Management {
     internal static class ManagementSessionDebugUtilities {
-#if DEBUG && false
+#if DEBUG
         public static bool IsDebugBuild => true;
 
         private static ISymbolDocumentWriter _document;
 
         public static void DefineDocument(ModuleBuilder moduleBuilder, [CallerFilePath]string sourceFilePath = "") {
-            ManagementSessionDebugUtilities._document = moduleBuilder.DefineDocument(sourceFilePath, Guid.Empty, Guid.Empty, Guid.Empty);
+            ManagementSessionDebugUtilities._document = moduleBuilder.DefineDocument(sourceFilePath, SymLanguageType.CSharp, SymLanguageVendor.Microsoft, SymDocumentType.Text);
         }
 
         public static void MarkPoint(ILGenerator il, [CallerLineNumber]int lineNumber = -1) {

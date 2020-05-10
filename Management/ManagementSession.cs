@@ -30,7 +30,7 @@ namespace AydenIO.Management {
             ManagementSession.assemblyName = new AssemblyName("ManagementClassDynamicImplementations");
             ManagementSession.assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(ManagementSession.assemblyName, AssemblyBuilderAccess.RunAndSave);
 
-#if DEBUG && false
+#if DEBUG
             Type debugType = typeof(DebuggableAttribute);
             ConstructorInfo debugConInfo = debugType.GetConstructor(new[] { typeof(DebuggableAttribute.DebuggingModes) });
             CustomAttributeBuilder debugAttrBuilder = new CustomAttributeBuilder(debugConInfo, new object[] {
@@ -196,24 +196,32 @@ namespace AydenIO.Management {
                                 if (propertyInfo.PropertyType.IsSubclassOf(typeof(DateTime))) { // Convert to DateTime if needed
                                     il.Emit(OpCodes.Call, convertToDateTime);
                                 } else if (propertyInfo.PropertyType.IsSubclassOf(typeof(ManagementClassBase))) { // Return type is a ManagementObject reference
-                                    MethodInfo getTypedFactory = getFactory.MakeGenericMethod(propertyInfo.PropertyType);
                                     LocalBuilder localPath = il.DeclareLocal(typeof(ManagementPath));
                                     LocalBuilder localMgmtObj = il.DeclareLocal(typeof(ManagementObject));
 
                                     // Create a management object from the current scope
+                                    il.Emit(OpCodes.Castclass, typeof(String));
                                     il.Emit(OpCodes.Newobj, typeof(ManagementPath).GetConstructor(new[] { typeof(String) }));
-                                    il.Emit(OpCodes.Stloc, localPath);
+                                    il.Emit(OpCodes.Stloc_S, localPath);
 
                                     il.Emit(OpCodes.Ldarg_0);
                                     il.Emit(OpCodes.Callvirt, getManagementObject);
                                     il.Emit(OpCodes.Callvirt, getManagementScope);
-                                    il.Emit(OpCodes.Ldloc, localPath);
+                                    il.Emit(OpCodes.Ldloc_S, localPath);
                                     il.Emit(OpCodes.Ldnull);
                                     il.Emit(OpCodes.Newobj, typeof(ManagementObject).GetConstructor(new[] { typeof(ManagementScope), typeof(ManagementPath), typeof(ObjectGetOptions) }));
-                                    il.Emit(OpCodes.Stloc, localMgmtObj);
+                                    il.Emit(OpCodes.Stloc_S, localMgmtObj);
+
+                                    MethodInfo getTypedFactory = getFactory.MakeGenericMethod(propertyInfo.PropertyType);
 
                                     il.Emit(OpCodes.Callvirt, getTypedFactory);
-                                    il.Emit(OpCodes.Ldloc, localMgmtObj);
+
+                                    il.Emit(OpCodes.Dup);
+                                    il.Emit(OpCodes.Call, typeof(Debug).GetMethod("WriteLine", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(Object) }, null));
+                                    il.Emit(OpCodes.Ldstr, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+                                    il.Emit(OpCodes.Call, typeof(Debug).GetMethod("WriteLine", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(String) }, null));
+
+                                    il.Emit(OpCodes.Ldloc_S, localMgmtObj);
 
                                     Type factoryType = typeof(ManagementClassFactory<>).MakeGenericType(propertyInfo.PropertyType);
 
@@ -222,6 +230,11 @@ namespace AydenIO.Management {
 
                                 // Return property value
                                 ManagementSessionDebugUtilities.MarkPoint(il);
+                                
+                                if (!propertyInfo.PropertyType.IsValueType) {
+                                    il.Emit(OpCodes.Castclass, propertyInfo.PropertyType);
+                                }
+
                                 il.Emit(OpCodes.Ret);
 
                                 // Property doesn't exist, return null
@@ -378,14 +391,14 @@ namespace AydenIO.Management {
                 if (!paramInfos.Where(p => !(p.IsOut || p.ParameterType.IsByRef)).Any()) {
                     // No parameters
                     il.Emit(OpCodes.Ldnull);
-                    il.Emit(OpCodes.Stloc, inParams);
+                    il.Emit(OpCodes.Stloc_S, inParams);
                 } else {
                     // Get method parameters, store in 'inParams'
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Callvirt, getManagementObject);
                     il.Emit(OpCodes.Ldstr, realMethodName);
                     il.Emit(OpCodes.Call, typeof(ManagementObject).GetMethod("GetMethodParameters", BindingFlags.Instance | BindingFlags.Public));
-                    il.Emit(OpCodes.Stloc, inParams);
+                    il.Emit(OpCodes.Stloc_S, inParams);
 
                     for (int paramIndex = 0; paramIndex < paramInfos.Length; paramIndex++) {
                         ParameterInfo paramInfo = paramInfos[paramIndex];
@@ -424,18 +437,24 @@ namespace AydenIO.Management {
                         }
 
                         // Get property - will always exist, checked above
-                        il.Emit(OpCodes.Ldloc, inParams);
+                        il.Emit(OpCodes.Ldloc_S, inParams);
                         il.Emit(OpCodes.Callvirt, getManagementBaseObjectProperties);
                         il.Emit(OpCodes.Ldstr, realParamPropertyName);
                         il.Emit(OpCodes.Callvirt, getPropertyDataCollectionItem);
 
                         // Get argument, ldarg.0 = this
-                        il.Emit(OpCodes.Ldarg, paramIndex + 1);
+                        il.Emit(OpCodes.Ldarg_S, paramIndex + 1);
 
-                        if (paramInfo.ParameterType.IsSubclassOf(typeof(DateTime))) {
+                        if (paramInfo.ParameterType.IsByRef) {
+                            il.Emit(OpCodes.Ldind_Ref);
+                        }
+
+                        Type underlyingParamType = paramInfo.ParameterType.IsByRef ? paramInfo.ParameterType.GetElementType() : paramInfo.ParameterType;
+
+                        if (underlyingParamType.IsSubclassOf(typeof(DateTime))) {
                             // Convert to DMTF DateTime
                             il.Emit(OpCodes.Call, convertFromDateTime);
-                        } else if (paramInfo.ParameterType.IsSubclassOf(typeof(ManagementClassBase))) {
+                        } else if (underlyingParamType.IsSubclassOf(typeof(ManagementClassBase))) {
                             // Get management object path
                             il.Emit(OpCodes.Callvirt, getPath);
                         }
@@ -455,13 +474,13 @@ namespace AydenIO.Management {
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Callvirt, getManagementObject);
                 il.Emit(OpCodes.Ldstr, realMethodName);
-                il.Emit(OpCodes.Ldloc, inParams);
+                il.Emit(OpCodes.Ldloc_S, inParams);
                 il.Emit(OpCodes.Ldnull);
                 il.Emit(OpCodes.Callvirt, typeof(ManagementObject).GetMethod("InvokeMethod", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(String), typeof(ManagementBaseObject), typeof(InvokeMethodOptions) }, null));
-                il.Emit(OpCodes.Stloc, outParams);
+                il.Emit(OpCodes.Stloc_S, outParams);
 
                 // Get error code
-                il.Emit(OpCodes.Ldloc, outParams);
+                il.Emit(OpCodes.Ldloc_S, outParams);
                 il.Emit(OpCodes.Callvirt, getManagementBaseObjectProperties);
                 il.Emit(OpCodes.Ldstr, "ReturnValue");
                 il.Emit(OpCodes.Callvirt, getPropertyDataCollectionItem);
@@ -498,7 +517,7 @@ namespace AydenIO.Management {
                     string realParamPropertyName = paramAttribute?.Name ?? paramInfo.Name;
                     Type realParamPropertyType = paramAttribute?.CastAs ?? (paramInfo.ParameterType.IsEnum ? Enum.GetUnderlyingType(paramInfo.ParameterType) : paramInfo.ParameterType);
 
-                    il.Emit(OpCodes.Ldloc, outParams);
+                    il.Emit(OpCodes.Ldloc_S, outParams);
                     il.Emit(OpCodes.Callvirt, getManagementBaseObjectProperties);
                     il.Emit(OpCodes.Ldstr, realParamPropertyName);
                     il.Emit(OpCodes.Callvirt, getPropertyDataCollectionItem);
@@ -523,31 +542,40 @@ namespace AydenIO.Management {
                     } else if (paramInfo.ParameterType.GetElementType().IsSubclassOf(typeof(ManagementClassBase))) { // Return type is a ManagementObject reference
                         Type underlyingParameterType = paramInfo.ParameterType.GetElementType();
 
-                        MethodInfo getTypedFactory = getFactory.MakeGenericMethod(paramInfo.ParameterType.GetElementType());
                         LocalBuilder localPath = il.DeclareLocal(typeof(ManagementPath));
                         LocalBuilder localMgmtObj = il.DeclareLocal(typeof(ManagementObject));
 
                         // Create a management object from the current scope
+                        il.Emit(OpCodes.Castclass, typeof(String));
                         il.Emit(OpCodes.Newobj, typeof(ManagementPath).GetConstructor(new[] { typeof(String) }));
-                        il.Emit(OpCodes.Stloc, localPath);
+                        il.Emit(OpCodes.Stloc_S, localPath);
 
                         il.Emit(OpCodes.Ldarg_0);
                         il.Emit(OpCodes.Callvirt, getManagementObject);
                         il.Emit(OpCodes.Callvirt, getManagementScope);
-                        il.Emit(OpCodes.Ldloc, localPath);
+                        il.Emit(OpCodes.Ldloc_S, localPath);
                         il.Emit(OpCodes.Ldnull);
                         il.Emit(OpCodes.Newobj, typeof(ManagementObject).GetConstructor(new[] { typeof(ManagementScope), typeof(ManagementPath), typeof(ObjectGetOptions) }));
-                        il.Emit(OpCodes.Stloc, localMgmtObj);
+                        il.Emit(OpCodes.Stloc_S, localMgmtObj);
+
+                        MethodInfo getTypedFactory = getFactory.MakeGenericMethod(underlyingParameterType);
 
                         il.Emit(OpCodes.Callvirt, getTypedFactory);
-                        il.Emit(OpCodes.Ldloc, localMgmtObj);
+                        il.Emit(OpCodes.Ldloc_S, localMgmtObj);
 
                         Type factoryType = typeof(ManagementClassFactory<>).MakeGenericType(underlyingParameterType);
 
                         il.Emit(OpCodes.Callvirt, factoryType.GetMethod("CreateInstance", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(ManagementObject) }, null));
                     }
 
-                    il.Emit(OpCodes.Starg, paramIndex + 1);
+                    LocalBuilder returnValue = il.DeclareLocal(paramInfo.ParameterType);
+
+                    // By ref values
+                    il.Emit(OpCodes.Stloc_S, returnValue);
+                    il.Emit(OpCodes.Ldarg_S, paramIndex + 1);
+                    il.Emit(OpCodes.Ldloc_S, returnValue);
+                    il.Emit(OpCodes.Stind_Ref);
+                    
                     il.Emit(OpCodes.Br_S, propertyIsNotNull);
 
                     // Property doesn't exist
@@ -562,7 +590,7 @@ namespace AydenIO.Management {
                 }
 
                 if (methodInfo.ReturnType != typeof(void)) {
-                    il.Emit(OpCodes.Ldloc, outParams);
+                    il.Emit(OpCodes.Ldloc_S, outParams);
                     il.Emit(OpCodes.Callvirt, getManagementBaseObjectProperties);
                     il.Emit(OpCodes.Ldstr, returnPropertyName);
                     il.Emit(OpCodes.Callvirt, getPropertyDataCollectionItem);
@@ -584,28 +612,34 @@ namespace AydenIO.Management {
                         // Convert to DateTime if needed
                         il.Emit(OpCodes.Call, convertToDateTime);
                     } else if (methodInfo.ReturnType.IsSubclassOf(typeof(ManagementClassBase))) { // Return type is a ManagementObject reference
-                        MethodInfo getTypedFactory = getFactory.MakeGenericMethod(methodInfo.ReturnType);
                         LocalBuilder localPath = il.DeclareLocal(typeof(ManagementPath));
                         LocalBuilder localMgmtObj = il.DeclareLocal(typeof(ManagementObject));
 
                         // Create a management object from the current scope
+                        il.Emit(OpCodes.Castclass, typeof(String));
                         il.Emit(OpCodes.Newobj, typeof(ManagementPath).GetConstructor(new[] { typeof(String) }));
-                        il.Emit(OpCodes.Stloc, localPath);
+                        il.Emit(OpCodes.Stloc_S, localPath);
 
                         il.Emit(OpCodes.Ldarg_0);
                         il.Emit(OpCodes.Callvirt, getManagementObject);
                         il.Emit(OpCodes.Callvirt, getManagementScope);
-                        il.Emit(OpCodes.Ldloc, localPath);
+                        il.Emit(OpCodes.Ldloc_S, localPath);
                         il.Emit(OpCodes.Ldnull);
                         il.Emit(OpCodes.Newobj, typeof(ManagementObject).GetConstructor(new[] { typeof(ManagementScope), typeof(ManagementPath), typeof(ObjectGetOptions) }));
-                        il.Emit(OpCodes.Stloc, localMgmtObj);
+                        il.Emit(OpCodes.Stloc_S, localMgmtObj);
+
+                        MethodInfo getTypedFactory = getFactory.MakeGenericMethod(methodInfo.ReturnType);
 
                         il.Emit(OpCodes.Callvirt, getTypedFactory);
-                        il.Emit(OpCodes.Ldloc, localMgmtObj);
+                        il.Emit(OpCodes.Ldloc_S, localMgmtObj);
 
                         Type factoryType = typeof(ManagementClassFactory<>).MakeGenericType(methodInfo.ReturnType);
 
                         il.Emit(OpCodes.Callvirt, factoryType.GetMethod("CreateInstance", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(ManagementObject) }, null));
+                    }
+
+                    if (!methodInfo.ReturnType.IsValueType) {
+                        il.Emit(OpCodes.Castclass, methodInfo.ReturnType);
                     }
 
                     il.Emit(OpCodes.Ret);
@@ -693,7 +727,7 @@ namespace AydenIO.Management {
                 il.Emit(OpCodes.Ldstr, mgmtClassName);
                 il.Emit(OpCodes.Ldnull);
                 il.Emit(OpCodes.Newobj, typeof(ManagementClass).GetConstructor(new[] { typeof(String), typeof(String), typeof(ObjectGetOptions) }));
-                il.Emit(OpCodes.Stloc, managementClass);
+                il.Emit(OpCodes.Stloc_S, managementClass);
 
                 for (int paramIndex = 0; paramIndex < paramInfos.Length; paramIndex++) {
                     ParameterInfo paramInfo = paramInfos[paramIndex];
@@ -708,13 +742,13 @@ namespace AydenIO.Management {
                     }
 
                     // Get property - will always exist, checked above
-                    il.Emit(OpCodes.Ldloc, managementClass);
+                    il.Emit(OpCodes.Ldloc_S, managementClass);
                     il.Emit(OpCodes.Callvirt, getManagementBaseObjectProperties);
                     il.Emit(OpCodes.Ldstr, realParamPropertyName);
                     il.Emit(OpCodes.Callvirt, getPropertyDataCollectionItem);
 
                     // Get argument, ldarg.0 = this
-                    il.Emit(OpCodes.Ldarg, paramIndex + 1);
+                    il.Emit(OpCodes.Ldarg_S, paramIndex + 1);
 
                     if (paramInfo.ParameterType == typeof(DateTime)) {
                         // Convert to DMTF DateTime
@@ -734,7 +768,7 @@ namespace AydenIO.Management {
                 }
 
                 // managementObject = managementClass.CreateInstance()
-                il.Emit(OpCodes.Ldloc, managementClass);
+                il.Emit(OpCodes.Ldloc_S, managementClass);
                 il.Emit(OpCodes.Call, typeof(ManagementClass).GetMethod("CreateInstance", BindingFlags.Instance | BindingFlags.Public));
 
                 // [classDefType] instance = new [classType](managementObject)

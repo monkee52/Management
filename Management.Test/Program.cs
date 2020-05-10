@@ -28,5 +28,11 @@ namespace AydenIO.Management.Test {
             Console.ReadKey(true);
             Console.WriteLine();
         }
+
+        void Test(out MSFT_Partition createdPartition) {
+            string result = "";
+
+            createdPartition = ManagementSession.GetFactory<MSFT_Partition>().CreateInstance(new ManagementObject(null, new ManagementPath(result), null));
+        }
     }
 }
