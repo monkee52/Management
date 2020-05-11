@@ -10,16 +10,15 @@ namespace AydenIO.Management.Test {
     class Program {
         static void Main(string[] args) {
             var w = ManagementSession.GetFactory<MSFT_Disk>().GetInstances();
-            var x = ManagementSession.GetFactory<MSFT_DiskToPartition>().GetInstances().OfType<MSFT_DiskToPartition>().ToArray();
+            var x = ManagementSession.GetFactory<MSFT_DiskToPartition>().GetInstances();
 
             foreach (MSFT_Disk disk in w) {
                 Console.WriteLine(disk.FriendlyName);
             }
 
-            ManagementSession.Save();
-
             foreach (MSFT_DiskToPartition d2p in x) {
-                Console.WriteLine(d2p.Partition);
+                Console.WriteLine(d2p.Disk.FriendlyName);
+                Console.WriteLine(d2p.Partition.AccessPaths?.FirstOrDefault());
             }
 
             ManagementSession.Save();
@@ -27,12 +26,6 @@ namespace AydenIO.Management.Test {
             Console.Write("Press any key to continue...");
             Console.ReadKey(true);
             Console.WriteLine();
-        }
-
-        void Test(out MSFT_Partition createdPartition) {
-            string result = "";
-
-            createdPartition = ManagementSession.GetFactory<MSFT_Partition>().CreateInstance(new ManagementObject(null, new ManagementPath(result), null));
         }
     }
 }

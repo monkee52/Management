@@ -18,7 +18,7 @@ namespace AydenIO.Management {
         public T CreateInstance(ManagementBaseObject managementObject) => (T)Activator.CreateInstance(ManagementSession.GetClassType(typeof(T)), managementObject);
 
         public ManagementClassCollection<T> GetInstances() {
-            ManagementClass managementClass = new ManagementClass(this.NamespacePath, this.ClassName, null);
+            ManagementClass managementClass = new ManagementClass(null, ManagementSession.GetManagementPath(typeof(T)), null);
             EnumerationOptions enumerationOptions = new EnumerationOptions();
 
             enumerationOptions.EnsureLocatable = true;
@@ -33,7 +33,7 @@ namespace AydenIO.Management {
             enumerationOptions.EnsureLocatable = true;
             enumerationOptions.EnumerateDeep = true;
 
-            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(new ManagementScope(this.NamespacePath), new SelectQuery(this.ClassName, condition), enumerationOptions)) {
+            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(null, new SelectQuery(this.ClassName, condition), enumerationOptions)) {
                 return new ManagementClassCollection<T>(searcher.Get());
             }
         }
