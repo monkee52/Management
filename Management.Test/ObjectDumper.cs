@@ -143,7 +143,7 @@ namespace AydenIO.Management.Test {
             }
             
             if (o is DateTime) {
-                return ((DateTime)o).ToShortDateString();
+                return ((DateTime)o).ToString();
             }
 
             if (o is string) {

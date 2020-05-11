@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace AydenIO.Management {
     internal static class ManagementSessionDebugUtilities {
-#if DEBUG && false
+#if DEBUG
         public static bool IsDebugBuild => true;
 
         private static ISymbolDocumentWriter _document;

@@ -5,7 +5,7 @@ using System.Management;
 using System.Text;
 
 namespace AydenIO.Management {
-    public abstract class ManagementClassBase {
+    public abstract class ManagementClassBase : IEquatable<ManagementClassBase> {
         public abstract Int32 __GENUS { get; }
         public abstract string __CLASS { get; }
         public abstract string __SUPERCLASS { get; }
@@ -52,6 +52,40 @@ namespace AydenIO.Management {
             ManagementClassFactory<T> factory = ManagementSession.GetFactory<T>();
 
             return this.ManagementObject.GetRelated(ManagementSession.GetClassName(typeof(T))).OfType<ManagementObject>().Select(x => factory.CreateInstance((ManagementBaseObject)x));
+        }
+
+        public bool Equals(ManagementClassBase other) {
+            return this.GetType().FullName == other.GetType().FullName && String.Equals(this.__PATH, other.__PATH, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public override bool Equals(object other) {
+            if (Object.ReferenceEquals(null, other)) {
+                return false;
+            }
+
+            if (Object.ReferenceEquals(this, other)) {
+                return true;
+            }
+
+            if (other.GetType() != this.GetType()) {
+                return false;
+            }
+
+            return this.Equals(other as ManagementClassBase);
+        }
+
+        public override Int32 GetHashCode() => this.GetType().FullName.GetHashCode() ^ (this.__PATH == null ? this.ManagementObject.GetHashCode() : this.__PATH.GetHashCode());
+
+        public static bool operator ==(ManagementClassBase obj1, ManagementClassBase obj2) {
+            if ((object)obj1 == null) {
+                return (object)obj2 == null;
+            }
+
+            return obj1.Equals(obj2);
+        }
+
+        public static bool operator !=(ManagementClassBase obj1, ManagementClassBase obj2) {
+            return !(obj1 == obj2);
         }
     }
 }
