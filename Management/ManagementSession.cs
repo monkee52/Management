@@ -325,7 +325,7 @@ namespace AydenIO.Management {
                     }
 
                     if (implementSetter) {
-                        MethodBuilder setterMethodBuilder = classType.DefineMethod(propertySetterName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.SpecialName | MethodAttributes.HideBySig, propertyInfo.PropertyType, null);
+                        MethodBuilder setterMethodBuilder = classType.DefineMethod(propertySetterName, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.SpecialName | MethodAttributes.HideBySig, typeof(void), new[] { propertyInfo.PropertyType });
                         ILGenerator il = setterMethodBuilder.GetILGenerator();
 
                         if (propertyExists) {
